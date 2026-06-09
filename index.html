@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Photo Alarm</title>
+    <meta name="theme-color" content="#0b0d10" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Photo Alarm" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell" aria-label="Photo Alarm">
+      <section class="screen active" id="homeScreen">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Photo Alarm</p>
+            <h1>Wake up, then prove it.</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="openDebugButton" title="Debug log" aria-label="Debug log" hidden>
+              <span aria-hidden="true">⌁</span>
+            </button>
+            <button class="icon-button" id="openSettingsButton" title="Settings" aria-label="Settings">
+              <span aria-hidden="true">⚙</span>
+            </button>
+            <button class="icon-button accent" id="testAlarmButton" title="Test alarm" aria-label="Test alarm">
+              <span aria-hidden="true">!</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="status-banner" id="statusBanner" data-state="idle">
+          Arm at least one alarm for overnight use.
+        </div>
+        <p class="nearest-label" id="nearestAlarmLabel">No armed alarms</p>
+
+        <div class="alarm-list" id="alarmList"></div>
+
+        <button type="button" class="secondary-button add-alarm-button" id="addAlarmButton">Add alarm</button>
+
+        <section class="task-card">
+          <span class="task-icon" aria-hidden="true"></span>
+          <div>
+            <span class="label">Wake-up challenge</span>
+            <strong>Take a photo</strong>
+            <p>The alarm keeps ringing until you capture a verification photo.</p>
+          </div>
+        </section>
+
+        <details class="ios-tips">
+          <summary>iOS overnight tips</summary>
+          <ul>
+            <li>Install via Safari → Share → Add to Home Screen.</li>
+            <li>Connect your Bluetooth speaker before bed.</li>
+            <li>Enable keep-alive in Settings and leave this app open.</li>
+            <li>Plug in your device and turn off Low Power Mode.</li>
+          </ul>
+        </details>
+      </section>
+
+      <section class="screen" id="settingsScreen">
+        <header class="topbar compact">
+          <button class="icon-button subtle" id="backHomeButton" aria-label="Back">←</button>
+          <div>
+            <p class="eyebrow">Settings</p>
+            <h2>Audio &amp; reliability</h2>
+          </div>
+        </header>
+
+        <div class="settings-panel">
+          <label class="toggle-row">
+            <span>
+              <strong>Keep audio session active overnight</strong>
+              <small>Loops near-silent audio to help keep Bluetooth alive while the app stays open.</small>
+            </span>
+            <input id="keepAudioAlive" type="checkbox" />
+          </label>
+
+          <label class="toggle-row">
+            <span>
+              <strong>Volume ramp-up</strong>
+              <small>Gradually increase alarm volume instead of starting at full blast.</small>
+            </span>
+            <input id="volumeRampEnabled" type="checkbox" />
+          </label>
+
+          <label class="field-row">
+            <span>Ramp duration (seconds)</span>
+            <input id="volumeRampSeconds" type="number" min="5" max="120" value="30" />
+          </label>
+
+          <label class="field-row">
+            <span>Alarm sound</span>
+            <select id="soundSelect"></select>
+          </label>
+
+          <div class="sound-upload">
+            <p class="sound-status" id="customSoundStatus"></p>
+            <div class="sound-actions">
+              <button type="button" class="secondary-button" id="chooseCustomSound">Upload custom sound</button>
+              <button type="button" class="secondary-button" id="resetCustomSound" hidden>Remove custom</button>
+            </div>
+            <input id="customSoundInput" type="file" accept=".mp3,.wav,audio/mpeg,audio/wav" hidden />
+          </div>
+
+          <label class="toggle-row">
+            <span>
+              <strong>Show debug log</strong>
+              <small>Record scheduler, visibility, and audio events for troubleshooting.</small>
+            </span>
+            <input id="debugMode" type="checkbox" />
+          </label>
+        </div>
+      </section>
+
+      <section class="screen" id="debugScreen">
+        <header class="topbar compact">
+          <button class="icon-button subtle" id="backFromDebugButton" aria-label="Back">←</button>
+          <div>
+            <p class="eyebrow">Debug</p>
+            <h2>Reliability log</h2>
+          </div>
+        </header>
+
+        <div class="debug-actions">
+          <button type="button" class="secondary-button" id="exportLogsButton">Export</button>
+          <button type="button" class="secondary-button danger" id="clearLogsButton">Clear</button>
+        </div>
+
+        <div class="log-container" id="logContainer"></div>
+      </section>
+
+      <section class="screen ringing" id="ringingScreen" aria-live="assertive">
+        <div class="pulse"></div>
+        <p class="eyebrow">Alarm ringing</p>
+        <h2 id="ringingTime">07:00</h2>
+        <p class="ringing-label" id="ringingLabel">Morning</p>
+        <p class="ringing-copy">Complete the wake-up challenge to stop the alarm.</p>
+        <button class="primary-button" id="verifyButton">Start challenge</button>
+      </section>
+
+      <section class="screen" id="verifyScreen">
+        <header class="topbar compact">
+          <div>
+            <p class="eyebrow">Challenge</p>
+            <h2>Take a photo</h2>
+          </div>
+        </header>
+
+        <div class="camera-frame">
+          <video id="verifyVideo" autoplay playsinline muted></video>
+          <canvas id="verifyCanvas" hidden></canvas>
+          <div class="camera-empty" id="verifyEmpty">Camera preview appears here.</div>
+        </div>
+
+        <p class="camera-note" id="photoStatus">Waiting for photo</p>
+
+        <div class="action-stack">
+          <button class="primary-button" id="captureVerifyButton">Take verification photo</button>
+          <button class="secondary-button danger" id="keepRingingButton">Keep ringing</button>
+        </div>
+      </section>
+
+      <section class="screen loading" id="loadingScreen" aria-live="polite">
+        <div class="loader" id="loaderIcon" aria-hidden="true"></div>
+        <p class="eyebrow" id="loadingEyebrow">Checking photo</p>
+        <h2 id="loadingTitle">Hold tight</h2>
+        <p class="ringing-copy">Finishing the wake-up task.</p>
+      </section>
+    </main>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
